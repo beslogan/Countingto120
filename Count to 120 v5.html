@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Count Forward with Side 120 Chart</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #f0f8ff;
+        margin: 0;
+        padding: 20px;
+    }
+
+    .startScreen {
+        text-align: center;
+        margin-top: 100px;
+    }
+
+    .startBtn {
+        font-size: 28px;
+        padding: 15px 30px;
+        cursor: pointer;
+    }
+
+    .container {
+        display: none;
+        justify-content: center;
+        align-items: flex-start;
+        gap: 30px;
+    }
+
+    .game {
+        text-align: center;
+        max-width: 600px;
+    }
+
+    h1 { font-size: 32px; }
+
+    .question {
+        font-size: 20px;
+    }
+
+    .start {
+        font-size: 50px;
+        margin: 10px;
+    }
+
+    .line {
+        display: flex;
+        justify-content: center;
+        margin: 20px 0;
+    }
+
+    .slot {
+        width: 70px;
+        height: 70px;
+        border: 3px dashed #999;
+        margin: 10px;
+        font-size: 26px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #fff;
+    }
+
+    .filled {
+        border: 3px solid #4caf50;
+        background: #eaffea;
+    }
+
+    .numberLine {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .numBtn {
+        width: 65px;
+        height: 65px;
+        margin: 6px;
+        font-size: 22px;
+        border-radius: 10px;
+        border: none;
+        background: #fff;
+        box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+        cursor: pointer;
+    }
+
+    .numBtn:disabled {
+        background: #ccc;
+    }
+
+    .result {
+        font-size: 24px;
+        margin-top: 10px;
+    }
+
+    .chartContainer {
+        text-align: center;
+    }
+
+    .chart {
+        display: grid;
+        grid-template-columns: repeat(10, 28px);
+        gap: 3px;
+    }
+
+    .chartCell {
+        width: 28px;
+        height: 28px;
+        font-size: 11px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #fff;
+        border: 1px solid #ccc;
+    }
+
+    .highlightStart {
+        background: #ffd54f;
+    }
+
+    .highlightCount {
+        background: #90ee90;
+    }
+</style>
+</head>
+<body>
+
+<div class="startScreen">
+    <h1>Count Forward Game</h1>
+    <button class="startBtn" onclick="startGame()">Start Game</button>
+</div>
+
+<div class="container" id="gameContainer">
+
+    <div class="game">
+        <h1>Count Forward!</h1>
+        <div class="question" id="question"></div>
+        <div class="start" id="startNumber"></div>
+
+        <div class="line">
+            <div class="slot" id="slot1"></div>
+            <div class="slot" id="slot2"></div>
+            <div class="slot" id="slot3"></div>
+        </div>
+
+        <div class="numberLine" id="numberLine"></div>
+        <div class="result" id="result"></div>
+    </div>
+
+    <div class="chartContainer">
+        <h3>120 Chart</h3>
+        <div class="chart" id="chart"></div>
+    </div>
+
+</div>
+
+<script>
+let start = 0;
+let currentStep = 1;
+let questionNum = 1;
+
+function speak(text) {
+    let speech = new SpeechSynthesisUtterance(text);
+    speech.rate = 0.85;
+    speech.lang = "en-US";
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(speech);
+}
+
+function startGame() {
+    document.querySelector(".startScreen").style.display = "none";
+    document.getElementById("gameContainer").style.display = "flex";
+
+    speak("Let's play. Start at the number and count on three numbers.");
+    setTimeout(newQuestion, 1500);
+}
+
+function buildChart() {
+    let html = "";
+    for (let i = 1; i <= 120; i++) {
+        html += `<div class="chartCell" id="cell${i}">${i}</div>`;
+    }
+    document.getElementById("chart").innerHTML = html;
+}
+
+function updateChart() {
+    for (let i = 1; i <= 120; i++) {
+        let cell = document.getElementById("cell" + i);
+        cell.classList.remove("highlightStart", "highlightCount");
+    }
+
+    document.getElementById("cell" + start).classList.add("highlightStart");
+
+    for (let i = 1; i < currentStep; i++) {
+        let num = start + i;
+        if (num <= 120) {
+            document.getElementById("cell" + num).classList.add("highlightCount");
+        }
+    }
+}
+
+function newQuestion() {
+    currentStep = 1;
+    document.getElementById("result").textContent = "";
+
+    document.getElementById("question").textContent =
+        "Question " + questionNum + " of 20";
+
+    start = Math.floor(Math.random() * 110) + 1;
+    document.getElementById("startNumber").textContent = start;
+
+    for (let i = 1; i <= 3; i++) {
+        let slot = document.getElementById("slot" + i);
+        slot.textContent = "";
+        slot.classList.remove("filled");
+    }
+
+    let numbers = [];
+    for (let i = start - 3; i <= start + 6; i++) {
+        if (i > 0 && i <= 120) numbers.push(i);
+    }
+
+    numbers.sort(() => Math.random() - 0.5);
+
+    let html = "";
+    numbers.forEach(num => {
+        html += `<button class="numBtn" onclick="selectNumber(this, ${num})">${num}</button>`;
+    });
+
+    document.getElementById("numberLine").innerHTML = html;
+
+    updateChart();
+
+    speak("Start at " + start + ". Count on three numbers.");
+}
+
+function selectNumber(button, num) {
+    let correct = start + currentStep;
+
+    if (num === correct) {
+        let slot = document.getElementById("slot" + currentStep);
+        slot.textContent = num;
+        slot.classList.add("filled");
+
+        button.disabled = true;
+
+        currentStep++;
+        updateChart();
+
+        speak(num.toString());
+
+        if (currentStep > 3) {
+            document.getElementById("result").textContent = "Great job!";
+            speak("Great job!");
+
+            setTimeout(() => {
+                questionNum++;
+                if (questionNum > 20) {
+                    document.body.innerHTML = "<h1>🎉 You finished all 20 questions!</h1>";
+                    speak("You finished all twenty questions.");
+                } else {
+                    newQuestion();
+                }
+            }, 1500);
+        }
+    } else {
+        document.getElementById("result").textContent = "Try again!";
+        speak("Try again");
+    }
+}
+
+buildChart();
+</script>
+
+</body>
+</html>
